@@ -121,10 +121,12 @@ func (c *Client) AddMovieToUserList(imdbId string, tmdbId string, userId string,
 	log.Printf("user_list: %s", message)
 	notify.Message(message)
 
-	request.Added = true
-	err = c.database.UpdateTraktRequest(request)
-	if err != nil {
-		log.Printf("user_list: error updating movie request in database: %v", err)
+	if success > 0 {
+		request.Added = true
+		err = c.database.UpdateTraktRequest(request)
+		if err != nil {
+			log.Printf("user_list: error updating movie request in database: %v", err)
+		}
 	}
 
 	return nil
@@ -208,66 +210,13 @@ func (c *Client) AddShowToUserList(imdbId string, tvdbId string, userId string, 
 	log.Printf("user_list: %s", message)
 	notify.Message(message)
 
-	request.Added = true
-	err = c.database.UpdateTraktRequest(request)
-	if err != nil {
-		log.Printf("user_list: error updating tv show request in database: %v", err)
-	}
-
-	return nil
-}
-
-func (a addUserListResponse) checkResult() error {
-	movieErrors := make([]string, 0)
-	showErrors := make([]string, 0)
-
-	if len(a.NotFound.Movies) > 0 {
-		for _, id := range a.NotFound.Movies {
-			if id.Ids.TmdbId != "" {
-				movieErrors = append(movieErrors, fmt.Sprintf("tmdb: %s", id.Ids.TmdbId))
-			}
-			if id.Ids.ImdbId != "" {
-				movieErrors = append(movieErrors, fmt.Sprintf("imdb: %s", id.Ids.ImdbId))
-			}
+	if success > 0 {
+		request.Added = true
+		err = c.database.UpdateTraktRequest(request)
+		if err != nil {
+			log.Printf("user_list: error updating tv show request in database: %v", err)
 		}
 	}
-
-	if len(a.NotFound.Shows) > 0 {
-		for _, id := range a.NotFound.Shows {
-			if id.Ids.TvdbId != "" {
-				showErrors = append(showErrors, fmt.Sprintf("tvdb: %s", id.Ids.TvdbId))
-			}
-			if id.Ids.ImdbId != "" {
-				showErrors = append(showErrors, fmt.Sprintf("imdb: %s", id.Ids.ImdbId))
-			}
-		}
-	}
-
-	movieSuccess := a.Added.Movies + a.Existing.Movies
-	showSuccess := a.Added.Shows + a.Existing.Shows
-	totalMovies := movieSuccess + len(movieErrors)
-	totalShows := showSuccess + len(showErrors)
-
-	message := ""
-
-	if len(movieErrors) > 0 {
-		message = fmt.Sprintf("Error adding %d/%d movie(s): %s\n", movieSuccess, totalMovies, strings.Join(movieErrors, ","))
-	}
-
-	if len(showErrors) > 0 {
-		message = fmt.Sprintf("Error adding %d/%d tv show(s): %s\n", showSuccess, totalShows, strings.Join(showErrors, ","))
-	}
-
-	if movieSuccess > 0 {
-		message = fmt.Sprintf("Successfully added %d/%d movie(s)\n", movieSuccess, totalMovies)
-	}
-
-	if showSuccess > 0 {
-		message = fmt.Sprintf("Successfully added %d/%d tv show(s)\n", showSuccess, totalShows)
-	}
-
-	log.Printf("user_list: %s", message)
-	notify.Message(message)
 
 	return nil
 }
