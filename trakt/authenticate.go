@@ -99,21 +99,23 @@ func (c *Client) createAccessToken() (*accessTokenResponse, error) {
 	}
 
 	c.credentials.deviceCode = codeResponse.DeviceCode
+	expiresAt := time.Now().Add(time.Duration(codeResponse.ExpiresIn) * time.Second)
 
 	notify.Message("Action required: authentication requires intervention.")
 	log.Print("******************************** ACTION REQUIRED ********************************")
 	log.Print("*                                                                               *")
 	log.Printf("* Please go to %s and enter the following code: %s *", codeResponse.VerificationUrl, codeResponse.UserCode)
 	log.Print("*                                                                               *")
+	log.Printf("* Code will expire at %s                           *", expiresAt.Format(time.RFC822))
+	log.Print("*                                                                               *")
 	log.Print("*********************************************************************************")
 
-	expiresAt := time.Now().Add(time.Duration(codeResponse.ExpiresIn) * time.Second)
 	for {
 		if time.Now().After(expiresAt) {
-			return nil, fmt.Errorf("unable to fetch trakt access token within allowed time limit")
+			return nil, fmt.Errorf("auth: unable to fetch trakt access token within allowed time limit")
 		}
 
-		log.Print("auth: waiting for authorisation")
+		// log.Printf("auth: waiting for authorisation for code: %s", codeResponse.UserCode)
 
 		tokenResponse, err := c.getAccessToken()
 		if err != nil {
