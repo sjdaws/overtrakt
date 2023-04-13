@@ -146,15 +146,15 @@ func health(response http.ResponseWriter, request *http.Request) {
 }
 
 func unsynced() {
-	success, failure, err := client.SyncUnsynced(traktMovieList, traktTvShowList, traktUser)
+	records, err := client.SyncUnsynced(traktMovieList, traktTvShowList, traktUser)
 	if err != nil {
 		log.Fatalf("unsynced: %v", err)
 		return
 	}
 
-	message := fmt.Sprintf("unsynced: Complete - %d successful, %d failure", success, failure)
-	log.Printf(message)
-	notify.Message(message)
+	message := fmt.Sprintf("%d records synced", records)
+	log.Printf("unsynced: complete -" + message)
+	notify.Message("Unsynced complete:" + message)
 }
 
 func webhook(response http.ResponseWriter, request *http.Request) {

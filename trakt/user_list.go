@@ -231,34 +231,27 @@ func (c *Client) AddShowToUserList(imdbId string, tvdbId string, userId string, 
 	return nil
 }
 
-func (c *Client) SyncUnsynced(movieListId string, tvShowListId string, userId string) (int, int, error) {
+func (c *Client) SyncUnsynced(movieListId string, tvShowListId string, userId string) (int, error) {
 	unsynced, err := c.database.GetUnsyncedReleases()
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 
-	var failure, success int
+	var records int
 	for _, request := range unsynced {
-		err = nil
-
 		switch request.RequestType {
 		case RequestTypeMovie:
-			err = c.AddMovieToUserList(request.ImdbId, request.TmdbId, userId, movieListId)
+			_ = c.AddMovieToUserList(request.ImdbId, request.TmdbId, userId, movieListId)
 
 		case RequestTypeTvShow:
-			err = c.AddShowToUserList(request.ImdbId, request.TvdbId, userId, tvShowListId)
+			_ = c.AddShowToUserList(request.ImdbId, request.TvdbId, userId, tvShowListId)
 
 		default:
 			continue
 		}
 
-		if err != nil {
-			failure++
-			continue
-		}
-
-		success++
+		records++
 	}
 
-	return success, failure, nil
+	return records, nil
 }
