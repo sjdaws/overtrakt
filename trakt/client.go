@@ -54,6 +54,13 @@ func (c *Client) Health() bool {
 	return c.credentials.accessToken != ""
 }
 
+func (c *Client) close(body io.ReadCloser) {
+	err := body.Close()
+	if err != nil {
+		log.Printf("Unable to close http response body: %v", err)
+	}
+}
+
 func (c *Client) doRequest(parameters requestParameters) (*http.Response, error) {
 	request, err := http.NewRequest(parameters.method, fmt.Sprintf("%s%s", apiUrl, parameters.path), nil)
 	if err != nil {
@@ -85,13 +92,6 @@ func (c *Client) doRequest(parameters requestParameters) (*http.Response, error)
 	}
 
 	return response, nil
-}
-
-func (c *Client) close(body io.ReadCloser) {
-	err := body.Close()
-	if err != nil {
-		log.Printf("Unable to close http response body: %v", err)
-	}
 }
 
 func (c *Client) queryApi(parameters requestParameters) (*http.Response, error) {

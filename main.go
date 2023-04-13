@@ -103,13 +103,20 @@ func main() {
 		database,
 	)
 
-	log.Printf("Overtrakt: listening on port %s", httpPort)
+	args := os.Args[1:]
 
-	http.HandleFunc("/health", health)
-	http.HandleFunc("/webhook", webhook)
-	err = http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
-	if err != nil {
-		log.Fatalf("unable to start http server: %v", err)
+	if len(args) == 0 {
+		http.HandleFunc("/health", health)
+		http.HandleFunc("/webhook", webhook)
+		log.Printf("Overtrakt: listening on port %s", httpPort)
+		err = http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
+		if err != nil {
+			log.Fatalf("unable to start http server: %v", err)
+		}
+	}
+
+	if args[0] == "unsynced" {
+		unsynced()
 	}
 }
 
@@ -138,8 +145,48 @@ func health(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func unsynced() {
+	results, err := client.SyncUnsynced(traktMovieList, traktTvShowList, traktUser)
+	if err != nil {
+		log.Fatalf("unsynced: %v", err)
+		return
+	}
+
+	var failure int
+	var success int
+
+	for _, result := range results {
+		var requestId string
+		var requestType string
+		if result.Request.TmdbId != "" {
+			requestId = result.Request.TmdbId
+			requestType = "tmdb"
+		} else if result.Request.TvdbId != "" {
+			requestId = result.Request.TvdbId
+			requestType = "tvdb"
+		} else {
+			requestId = result.Request.ImdbId
+			requestType = "imdb"
+		}
+
+		if result.Error != nil {
+			log.Printf("Error adding %s using %s id %s, %v", result.Request.RequestType, requestType, requestId, err)
+			failure++
+
+			continue
+		}
+
+		log.Printf("Successfully added %s using %s id %s", result.Request.RequestType, requestType, requestId)
+		success++
+	}
+
+	message := fmt.Sprintf("Unsynced complete: %d successful, %d failure", success, failure)
+	log.Printf(message)
+	notify.Message(message)
+}
+
 func webhook(response http.ResponseWriter, request *http.Request) {
-	defer closeWebhookBody(request.Body)
+	defer closeRequestBody(request.Body)
 
 	var webhookRequest webhookBody
 	err := json.NewDecoder(request.Body).Decode(&webhookRequest)
@@ -187,9 +234,9 @@ func webhook(response http.ResponseWriter, request *http.Request) {
 	response.WriteHeader(201)
 }
 
-func closeWebhookBody(body io.ReadCloser) {
+func closeRequestBody(body io.ReadCloser) {
 	err := body.Close()
 	if err != nil {
-		log.Printf("Error closing webhook body: %v", err)
+		log.Printf("Error closing request body: %v", err)
 	}
 }
