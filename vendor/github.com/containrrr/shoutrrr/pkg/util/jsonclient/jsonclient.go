@@ -31,9 +31,15 @@ type client struct {
 	indent     string
 }
 
+// NewClient returns a new JSON Client using the default http.Client
 func NewClient() Client {
+	return NewWithHTTPClient(http.DefaultClient)
+}
+
+// NewWithHTTPClient returns a new JSON Client using the specified http.Client
+func NewWithHTTPClient(httpClient *http.Client) Client {
 	return &client{
-		httpClient: http.DefaultClient,
+		httpClient: httpClient,
 		headers: http.Header{
 			"Content-Type": []string{ContentType},
 		},
@@ -60,14 +66,19 @@ func (c *client) Post(url string, request interface{}, response interface{}) err
 	var err error
 	var body []byte
 
-	body, err = json.MarshalIndent(request, "", c.indent)
-	if err != nil {
-		return fmt.Errorf("error creating payload: %v", err)
+	if strReq, ok := request.(string); ok {
+		// If the request is a string, just pass it through without serializing
+		body = []byte(strReq)
+	} else {
+		body, err = json.MarshalIndent(request, "", c.indent)
+		if err != nil {
+			return fmt.Errorf("error creating payload: %w", err)
+		}
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("error creating request: %v", err)
+		return fmt.Errorf("error creating request: %w", err)
 	}
 
 	for key, val := range c.headers {
@@ -77,7 +88,7 @@ func (c *client) Post(url string, request interface{}, response interface{}) err
 	var res *http.Response
 	res, err = c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error sending payload: %v", err)
+		return fmt.Errorf("error sending payload: %w", err)
 	}
 
 	return parseResponse(res, response)
