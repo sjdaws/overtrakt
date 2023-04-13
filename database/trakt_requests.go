@@ -40,6 +40,25 @@ func (d *Database) AddTraktRequest(request *TraktRequest) error {
 	return err
 }
 
+func (d *Database) GetUnsyncedReleases() ([]*TraktRequest, error) {
+	results, err := d.connection.Query("SELECT * FROM trakt_requests WHERE added = 0;")
+	if err != nil {
+		return nil, err
+	}
+
+	var requests []*TraktRequest
+	for results.Next() {
+		var request *TraktRequest
+		err = results.Scan(request.ImdbId, request.RequestType, request.TmdbId, request.TvdbId, request.Added, request.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, request)
+	}
+
+	return requests, nil
+}
+
 func (d *Database) UpdateTraktRequest(request *TraktRequest) error {
 	prepared, err := d.connection.Prepare("INSERT INTO trakt_requests VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE imdb_id = ?, request_type = ?, tmdb_id = ?, tvdb_id = ?, added = ?")
 	if err != nil {

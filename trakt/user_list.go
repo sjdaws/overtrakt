@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+const (
+	RequestTypeMovie  = "movie"
+	RequestTypeTvShow = "show"
+)
+
 type addUserListRequest struct {
 	Movies []movieIds `json:"movies"`
 	Shows  []showIds  `json:"shows"`
@@ -43,6 +48,11 @@ type showIds struct {
 	Ids showId `json:"ids"`
 }
 
+type syncResult struct {
+	Request *db.TraktRequest
+	Error   error
+}
+
 func (c *Client) AddMovieToUserList(imdbId string, tmdbId string, userId string, userListId string) error {
 	if imdbId == "" && tmdbId == "" {
 		return fmt.Errorf("user_list: unable to add movie to trakt, no ids are supplied")
@@ -50,7 +60,7 @@ func (c *Client) AddMovieToUserList(imdbId string, tmdbId string, userId string,
 
 	request := &db.TraktRequest{
 		ImdbId:      imdbId,
-		RequestType: "movie",
+		RequestType: RequestTypeMovie,
 		TmdbId:      tmdbId,
 		TvdbId:      "",
 	}
@@ -139,7 +149,7 @@ func (c *Client) AddShowToUserList(imdbId string, tvdbId string, userId string, 
 
 	request := &db.TraktRequest{
 		ImdbId:      imdbId,
-		RequestType: "show",
+		RequestType: RequestTypeTvShow,
 		TmdbId:      "",
 		TvdbId:      tvdbId,
 	}
@@ -219,4 +229,29 @@ func (c *Client) AddShowToUserList(imdbId string, tvdbId string, userId string, 
 	}
 
 	return nil
+}
+
+func (c *Client) SyncUnsynced(movieListId string, tvShowListId string, userId string) ([]syncResult, error) {
+	unsynced, err := c.database.GetUnsyncedReleases()
+	if err != nil {
+		return nil, err
+	}
+
+	var results []syncResult
+	for _, request := range unsynced {
+		var requestErr error
+		var result syncResult
+		switch request.RequestType {
+		case RequestTypeMovie:
+			requestErr = c.AddMovieToUserList(request.ImdbId, request.TmdbId, userId, movieListId)
+		case RequestTypeTvShow:
+			requestErr = c.AddShowToUserList(request.ImdbId, request.TvdbId, userId, tvShowListId)
+		}
+		result.Request = request
+		if requestErr != nil {
+			result.Error = requestErr
+		}
+	}
+
+	return results, nil
 }
