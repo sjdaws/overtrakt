@@ -154,7 +154,11 @@ func unsynced() {
 
 	message := fmt.Sprintf("%d records synced", records)
 	log.Printf("unsynced: Complete - " + message)
-	notify.Message("Unsynced complete:" + message)
+
+	// Only notify if something happened
+	if records > 0 {
+		notify.Message("Unsynced complete: " + message)
+	}
 }
 
 func webhook(response http.ResponseWriter, request *http.Request) {
