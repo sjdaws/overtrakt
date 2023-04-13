@@ -153,7 +153,7 @@ func unsynced() {
 	}
 
 	message := fmt.Sprintf("%d records synced", records)
-	log.Printf("unsynced: complete -" + message)
+	log.Printf("unsynced: Complete - " + message)
 	notify.Message("Unsynced complete:" + message)
 }
 
