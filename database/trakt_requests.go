@@ -48,12 +48,12 @@ func (d *Database) GetUnsyncedReleases() ([]*TraktRequest, error) {
 
 	var requests []*TraktRequest
 	for results.Next() {
-		var request *TraktRequest
-		err = results.Scan(request.ImdbId, request.RequestType, request.TmdbId, request.TvdbId, request.Added, request.CreatedAt)
+		var request TraktRequest
+		err = results.Scan(&request.ImdbId, &request.RequestType, &request.TmdbId, &request.TvdbId, &request.Added, &request.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		requests = append(requests, request)
+		requests = append(requests, &request)
 	}
 
 	return requests, nil
