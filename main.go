@@ -152,6 +152,9 @@ func unsynced() {
 		return
 	}
 
+	var failure int
+	var success int
+
 	for _, result := range results {
 		var requestId string
 		var requestType string
@@ -168,11 +171,18 @@ func unsynced() {
 
 		if result.Error != nil {
 			log.Printf("Error adding %s using %s id %s, %v", result.Request.RequestType, requestType, requestId, err)
+			failure++
+
 			continue
 		}
 
 		log.Printf("Successfully added %s using %s id %s", result.Request.RequestType, requestType, requestId)
+		success++
 	}
+
+	message := fmt.Sprintf("Unsynced complete: %d successful, %d failure", success, failure)
+	log.Printf(message)
+	notify.Message(message)
 }
 
 func webhook(response http.ResponseWriter, request *http.Request) {
