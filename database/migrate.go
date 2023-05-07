@@ -33,7 +33,7 @@ func (d *Database) migrate(dbname string) error {
 	_, baseDir, _, _ := runtime.Caller(0)
 	basePath := filepath.Dir(baseDir)
 
-	driver, err := mysql.WithInstance(d.connection, &mysql.Config{})
+	driver, err := mysql.WithInstance(d.connection, &mysql.Config{NoLock: true})
 	if err != nil {
 		return err
 	}
