@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/sjdaws/overtrakt/notify"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/sjdaws/overtrakt/notify"
 
 	db "github.com/sjdaws/overtrakt/database"
 )
@@ -101,7 +102,7 @@ func (c *Client) createAccessToken() (*accessTokenResponse, error) {
 	c.credentials.deviceCode = codeResponse.DeviceCode
 	expiresAt := time.Now().Add(time.Duration(codeResponse.ExpiresIn) * time.Second)
 
-	notify.Message("Action required: authentication requires intervention.")
+	notify.Message(fmt.Sprintf(`Action required: authentication requires intervention.<br/><br/><b>URL:</b> <a href="%s">%s</a><br/><b>Code:</b> %s`, codeResponse.VerificationUrl, codeResponse.VerificationUrl, codeResponse.UserCode))
 	log.Print("******************************** ACTION REQUIRED ********************************")
 	log.Print("*                                                                               *")
 	log.Printf("* Please go to %s and enter the following code: %s *", codeResponse.VerificationUrl, codeResponse.UserCode)
