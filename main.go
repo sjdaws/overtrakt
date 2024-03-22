@@ -33,10 +33,10 @@ var (
 )
 
 type media struct {
-	ImdbId    string `json:"imdb_id"`
+	ImdbId    string `json:"imdbId"`
 	MediaType string `json:"media_type"`
-	TmdbId    string `json:"tmdb_id"`
-	TvdbId    string `json:"tvdb_id"`
+	TmdbId    string `json:"tmdbId"`
+	TvdbId    string `json:"tvdbId"`
 }
 
 type webhookBody struct {
